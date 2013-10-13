@@ -37,3 +37,4 @@ void __is_not_equal(void *context, const char *desc1, const void *subject1, cons
 
 #define string_is_equal(subject1, subject2) __string_is_equal(_context, #subject1, subject1, #subject2, subject2);
 void __string_is_equal(void *context, const char *desc1, const char *subject1, const char *desc2, const char *subject2);
+
