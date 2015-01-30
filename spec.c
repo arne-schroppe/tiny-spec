@@ -37,6 +37,7 @@ static jmp_buf exception_env;
 static int caught_sigsegv;
 static int caught_sigfpe;
 static int caught_sigill;
+static int caught_sigbus;
 void handle_signal(int sig) {
 	switch(sig) {
 		case SIGSEGV:
@@ -48,6 +49,9 @@ void handle_signal(int sig) {
 		case SIGILL:
 			caught_sigill = 1;
 			break;
+    case SIGBUS:
+      caught_sigbus = 1;
+      break;
 	}
 	longjmp(exception_env, 1);
 }
@@ -55,7 +59,7 @@ void handle_signal(int sig) {
 
 void process_signals(example_context *context) {
 
-	if(!(caught_sigsegv || caught_sigill || caught_sigfpe)) {
+	if(!(caught_sigsegv || caught_sigill || caught_sigfpe || caught_sigbus)) {
 		return;
 	}
 
@@ -74,6 +78,10 @@ void process_signals(example_context *context) {
 	if(caught_sigill) {
 		printf("  Signal: Illegal Instruction\n");
 	}
+
+	if(caught_sigbus) {
+		printf("  Signal: Bus error\n");
+	}
 }
 
 
@@ -82,6 +90,7 @@ int __verify_spec(char *name, spec this_spec) {
 	int i = 0;
 	example_context context = {0, 0};
 	example_func current_example;
+
 	while(1) {
 		current_example = this_spec[i].ex;
 		if(current_example == 0) break;
@@ -89,10 +98,11 @@ int __verify_spec(char *name, spec this_spec) {
 		signal(SIGSEGV, handle_signal);
 		signal(SIGFPE, handle_signal);
 		signal(SIGILL, handle_signal);
+		signal(SIGBUS, handle_signal);
 
 		context.success = 1;
 		context.description = this_spec[i].name;
-		caught_sigsegv = caught_sigfpe = caught_sigill = 0;
+		caught_sigsegv = caught_sigfpe = caught_sigill = caught_sigbus = 0;
 
 		if( setjmp(exception_env) ) {
 			process_signals(&context);
