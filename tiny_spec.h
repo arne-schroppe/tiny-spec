@@ -22,19 +22,19 @@ int __verify_spec(char *name, spec spec);
 
 /* Built-in matchers */
 
-#define is_true(subject) __is_true(_context, #subject, (void *)subject);
+#define is_true(subject) __is_true(_context, #subject, (void *)(unsigned long)subject);
 void __is_true(void *context, const char *desc, const void *subject);
 
-#define is_false(subject) __is_false(_context, #subject, (void *)subject);
+#define is_false(subject) __is_false(_context, #subject, (void *)(unsigned long)subject);
 void __is_false(void *context, const char *desc, const void *subject);
 
-#define is_null(subject) __is_null(_context, #subject, (void *)subject);
+#define is_null(subject) __is_null(_context, #subject, (void *)(unsigned long)subject);
 void __is_null(void *context, const char *desc, const void *subject);
 
-#define is_equal(subject1, subject2) __is_equal(_context, #subject1, (void *)subject1, #subject2, (void *)subject2);
+#define is_equal(subject1, subject2) __is_equal(_context, #subject1, (void *)(unsigned long)subject1, #subject2, (void *)(unsigned long)subject2);
 void __is_equal(void *context, const char *desc1, const void *subject1, const char *desc2, const void *subject2);
 
-#define is_not_equal(subject1, subject2) __is_not_equal(_context, #subject1, (void *)subject1, #subject2, (void *)subject2);
+#define is_not_equal(subject1, subject2) __is_not_equal(_context, #subject1, (void *)(unsigned long)subject1, #subject2, (void *)(unsigned long)subject2);
 void __is_not_equal(void *context, const char *desc1, const void *subject1, const char *desc2, const void *subject2);
 
 #define string_is_equal(subject1, subject2) __string_is_equal(_context, #subject1, subject1, #subject2, subject2);
