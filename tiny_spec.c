@@ -5,8 +5,6 @@
 #include <signal.h>
 #include <setjmp.h>
 
-#include <stdio.h>
-
 typedef struct {
 	int success;
 	const char *description;
@@ -57,7 +55,6 @@ void handle_signal(int sig) {
 	}
 	longjmp(exception_env, 1);
 }
-
 
 void process_signals(example_context *context) {
 
