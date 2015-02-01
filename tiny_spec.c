@@ -1,13 +1,20 @@
-#include "spec.h"
+#include "tiny_spec.h"
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
+#include <signal.h>
+#include <setjmp.h>
+
+#include <stdio.h>
 
 typedef struct {
 	int success;
 	const char *description;
 } example_context;
 
+void print_test_header(example_context *context) {
+	printf("it %s:\n", context->description);
+}
 
 void check(void *ctx, int is_failing, char *fail_desc, ...) {
 	example_context *context = (example_context *)ctx;
@@ -16,7 +23,7 @@ void check(void *ctx, int is_failing, char *fail_desc, ...) {
 
 	/* Only show the description of this example once */
 	if(context->success != 0) {
-		printf("it %s:\n", context->description);
+		print_test_header(context);
 		context->success = 0;
 	}
 
@@ -28,19 +35,85 @@ void check(void *ctx, int is_failing, char *fail_desc, ...) {
 	printf("\n");
 }
 
+static jmp_buf exception_env;
+static int caught_sigsegv;
+static int caught_sigfpe;
+static int caught_sigill;
+static int caught_sigbus;
+void handle_signal(int sig) {
+	switch(sig) {
+		case SIGSEGV:
+			caught_sigsegv = 1;
+			break;
+		case SIGFPE:
+			caught_sigfpe = 1;
+			break;
+		case SIGILL:
+			caught_sigill = 1;
+			break;
+    case SIGBUS:
+      caught_sigbus = 1;
+      break;
+	}
+	longjmp(exception_env, 1);
+}
 
-int __verify_spec(char *name, spec this_spec) {
+
+void process_signals(example_context *context) {
+
+	if(!(caught_sigsegv || caught_sigill || caught_sigfpe || caught_sigbus)) {
+		return;
+	}
+
+	if(context->success == 1) {
+		print_test_header(context);
+	}
+
+	if(caught_sigsegv) {
+		printf("  Signal: Segmentation Fault\n");
+	}
+
+	if(caught_sigfpe) {
+		printf("  Signal: Floating Point Error\n");
+	}
+
+	if(caught_sigill) {
+		printf("  Signal: Illegal Instruction\n");
+	}
+
+	if(caught_sigbus) {
+		printf("  Signal: Bus error\n");
+	}
+}
+
+
+int __verify_spec(char *name, spec spec) {
 	
+  example *this_spec = (example *)spec;
 	int i = 0;
 	example_context context = {0, 0};
 	example_func current_example;
+
 	while(1) {
 		current_example = this_spec[i].ex;
 		if(current_example == 0) break;
 
+		signal(SIGSEGV, handle_signal);
+		signal(SIGFPE, handle_signal);
+		signal(SIGILL, handle_signal);
+		signal(SIGBUS, handle_signal);
+
 		context.success = 1;
 		context.description = this_spec[i].name;
-		current_example(&context);
+		caught_sigsegv = caught_sigfpe = caught_sigill = caught_sigbus = 0;
+
+		if( setjmp(exception_env) ) {
+			process_signals(&context);
+			return 0;
+		}
+		else {
+			current_example(&context);
+		}
 
 		++i;
 	}
